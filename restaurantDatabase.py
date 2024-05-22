@@ -1,8 +1,9 @@
-## file name: restaurantDatabase.py
+## 
+
 import mysql.connector
 from mysql.connector import Error
 
-class RestaurantDatabase():
+class RestaurantDatabase:
     def __init__(self,
                  host="localhost",
                  port="3306",
@@ -30,85 +31,58 @@ class RestaurantDatabase():
             
             if self.connection.is_connected():
                 print("Successfully connected to the database")
-                return
         except Error as e:
             print("Error while connecting to MySQL", e)
+
+    def addReservation(self, customer_name, contact_info, reservation_time, number_of_guests, special_requests):
+        ''' Method to insert a new reservation into the reservations table '''
+        if self.connection.is_connected():
+            self.cursor = self.connection.cursor()
+            
+            # Check if customer already exists
+            self.cursor.execute("SELECT customerId FROM customers WHERE customerName = %s AND contactInfo = %s", (customer_name, contact_info))
+            result = self.cursor.fetchone()
+            
+            if result:
+                customer_id = result[0]
+            else:
+                # Add new customer
+                self.cursor.execute("INSERT INTO customers (customerName, contactInfo) VALUES (%s, %s)", (customer_name, contact_info))
+                self.connection.commit()
+                customer_id = self.cursor.lastrowid
+            
+            # Add reservation
+            query = "INSERT INTO reservations (customerId, reservationTime, numberOfGuests, specialRequests) VALUES (%s, %s, %s, %s)"
+            self.cursor.execute(query, (customer_id, reservation_time, number_of_guests, special_requests))
+            self.connection.commit()
+            print("Reservation added successfully")
 
     def getAllReservations(self):
         ''' Method to get all reservations from the reservations table '''
         if self.connection.is_connected():
             self.cursor = self.connection.cursor()
-            query = "SELECT * FROM reservations"
+            query = """
+            SELECT r.reservationId, c.customerName, c.contactInfo, r.reservationTime, r.numberOfGuests, r.specialRequests
+            FROM reservations r
+            JOIN customers c ON r.customerId = c.customerId
+            """
             self.cursor.execute(query)
             records = self.cursor.fetchall()
             return records
-
-    def addReservation(self, customer_id, reservation_time, number_of_guests, special_requests):
-        ''' Method to insert a new reservation into the reservations table '''
-        if self.connection.is_connected():
-            self.cursor = self.connection.cursor()
-            query = "INSERT INTO reservations (customer_id, reservation_time, number_of_guests, special_requests) VALUES (%s, %s, %s, %s)"
-            self.cursor.execute(query, (customer_id, reservation_time, number_of_guests, special_requests))
-            self.connection.commit()
-            print("Reservation added successfully")
-            return
-
-    def addCustomer(self, customer_name, contact_info):
-        ''' Method to add a new customer to the customers table '''
-        if self.connection.is_connected():
-            self.cursor = self.connection.cursor()
-            query = "INSERT INTO customers (customer_name, contact_info) VALUES (%s, %s)"
-            self.cursor.execute(query, (customer_name, contact_info))
-            self.connection.commit()
-            print("Customer added successfully")
-            return
-
-    def getCustomerPreferences(self, customer_id):
-        ''' Method to retrieve dining preferences for a specific customer '''
-        if self.connection.is_connected():
-            self.cursor = self.connection.cursor()
-            query = "SELECT * FROM diningPreferences WHERE customerId = %s"
-            self.cursor.execute(query, (customer_id,))
-            preferences = self.cursor.fetchall()
-            return preferences
-
-    def addSpecialRequest(self, reservation_id, special_request):
-        ''' Method to add a special request to an existing reservation '''
-        if self.connection.is_connected():
-            self.cursor = self.connection.cursor()
-            query = "UPDATE reservations SET special_requests = %s WHERE reservation_id = %s"
-            self.cursor.execute(query, (special_request, reservation_id))
-            self.connection.commit()
-            print("Special request added successfully")
-            return
-
-    def findReservations(self, customer_id):
-        ''' Method to find all reservations for a specific customer '''
-        if self.connection.is_connected():
-            self.cursor = self.connection.cursor()
-            query = "SELECT * FROM reservations WHERE customer_id = %s"
-            self.cursor.execute(query, (customer_id,))
-            reservations = self.cursor.fetchall()
-            return reservations
 
     def deleteReservation(self, reservation_id):
         ''' Method to delete a reservation from the reservations table '''
         if self.connection.is_connected():
             self.cursor = self.connection.cursor()
-            query = "DELETE FROM reservations WHERE reservation_id = %s"
+            query = "DELETE FROM reservations WHERE reservationId = %s"
             self.cursor.execute(query, (reservation_id,))
             self.connection.commit()
             print("Reservation deleted successfully")
-            return
 
-    def searchPreferences(self, dietary_restriction):
-        ''' Method to search dining preferences based on dietary restrictions '''
-        if self.connection.is_connected():
-            self.cursor = self.connection.cursor()
-            query = "SELECT * FROM diningPreferences WHERE dietaryRestrictions LIKE %s"
-            search_pattern = f"%{dietary_restriction}%"
-            self.cursor.execute(query, (search_pattern,))
-            preferences = self.cursor.fetchall()
-            return preferences
-
-# Add more methods as needed for restaurant operations
+if __name__ == "__main__":
+    db = RestaurantDatabase()
+    # Example usage
+    db.addReservation("John Eddy", "555-1111", "2034-05-25 13:00", 4, "Window seat")
+    reservations = db.getAllReservations()
+    for reservation in reservations:
+        print(reservation)
