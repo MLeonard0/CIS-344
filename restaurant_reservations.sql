@@ -50,66 +50,52 @@ VALUES
 (2, 'Corner', 'Vegetarian'),
 (3, 'Center', 'Nut allergy');
 
-DELIMITER //
 
-CREATE PROCEDURE findReservations(IN customerId INT)
+-- Select statements
+SELECT * FROM customers;
+SELECT * FROM reservations;
+SELECT * FROM diningPreferences;
+
+-- Procedure to find all reservations for a customer using their ID
+DELIMITER //
+CREATE PROCEDURE findReservations(IN in_customerId INT)
 BEGIN
-    SELECT r.reservationId, r.reservationTime, r.numberOfGuests, r.specialRequests 
-    FROM Reservations r
-    WHERE r.customerId = customerId;
+    SELECT * FROM reservations WHERE customerId = in_customerId;
 END //
-
 DELIMITER ;
-DELIMITER //
 
-CREATE PROCEDURE addSpecialRequest(IN reservationId INT, IN requests VARCHAR(200))
+-- Procedure to update the specialRequests field in the reservations table
+DELIMITER //
+CREATE PROCEDURE addSpecialRequest(IN in_reservationId INT, IN in_requests VARCHAR(200))
 BEGIN
-    UPDATE Reservations
-    SET specialRequests = requests
-    WHERE reservationId = reservationId;
+    UPDATE reservations SET specialRequests = in_requests WHERE reservationId = in_reservationId;
 END //
-
 DELIMITER ;
-DELIMITER //
 
+-- Procedure to create a new reservation with customer details
+DELIMITER //
 CREATE PROCEDURE addReservation(
-    IN customerName VARCHAR(45),
-    IN contactInfo VARCHAR(200),
-    IN reservationTime DATETIME,
-    IN numberOfGuests INT,
-    IN specialRequests VARCHAR(200)
+    IN in_customerName VARCHAR(45), 
+    IN in_contactInfo VARCHAR(200), 
+    IN in_reservationTime DATETIME, 
+    IN in_numberOfGuests INT, 
+    IN in_specialRequests VARCHAR(200)
 )
 BEGIN
     DECLARE customerId INT;
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        -- ROLLBACK TRANSACTION IN CASE OF ERROR
-        ROLLBACK;
-    END;
     
-    START TRANSACTION;
-
-    -- Check if customer exists
-    SELECT c.customerId INTO customerId
-    FROM Customers c
-    WHERE c.customerName = customerName AND c.contactInfo = contactInfo
-    LIMIT 1;
-
-    -- If customer doesn't exist, create new customer
+    -- Check if customer already exists
+    SELECT customerId INTO customerId FROM customers 
+    WHERE customerName = in_customerName AND contactInfo = in_contactInfo;
+    
+    -- If customer does not exist, create a new one
     IF customerId IS NULL THEN
-        INSERT INTO Customers (customerName, contactInfo) VALUES (customerName, contactInfo);
+        INSERT INTO customers (customerName, contactInfo) VALUES (in_customerName, in_contactInfo);
         SET customerId = LAST_INSERT_ID();
     END IF;
-
-    -- Add new reservation
-    INSERT INTO Reservations (customerId, reservationTime, numberOfGuests, specialRequests)
-    VALUES (customerId, reservationTime, numberOfGuests, specialRequests);
-
-    COMMIT;
+    
+    -- Add reservation
+    INSERT INTO reservations (customerId, reservationTime, numberOfGuests, specialRequests) VALUES
+    (customerId, in_reservationTime, in_numberOfGuests, in_specialRequests);
 END //
-
-DELIMITER ;    
-
-
-
-
+DELIMITER ;
