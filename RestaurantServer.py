@@ -1,4 +1,3 @@
-
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from restaurantDatabase import RestaurantDatabase
 import cgi
@@ -212,3 +211,4 @@ def run(server_class=HTTPServer, handler_class=RestaurantPortalHandler, port=800
     httpd.serve_forever()
 
 run()
+
