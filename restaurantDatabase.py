@@ -1,5 +1,3 @@
-## 
-
 import mysql.connector
 from mysql.connector import Error
 
@@ -82,7 +80,7 @@ class RestaurantDatabase:
 if __name__ == "__main__":
     db = RestaurantDatabase()
     # Example usage
-    db.addReservation("John Eddy", "555-1111", "2034-05-25 13:00", 4, "Window seat")
+    db.addReservation("John Doe", "555-1234", "2024-05-25 19:00", 4, "Window seat")
     reservations = db.getAllReservations()
     for reservation in reservations:
         print(reservation)
